@@ -6,16 +6,16 @@ const port = process.env.PORT || 5000;
 const socketPort = process.env.PORT || 5001;
 
 // for socket io
-const http = require('http');
-const {Server} = require("socket.io");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: {
-        origin: 'http://localhost:5173',
-        methods: ["GET", "POST"],
-    },
-})
+	cors: {
+		origin: "https://meetcast.vercel.app",
+		methods: ["GET", "POST"],
+	},
+});
 
 // for socket io
 
@@ -43,11 +43,10 @@ io.on("connection", (socket) => {
 	});
 });
 
-server.listen(socketPort, ()=>{
-    console.log("Socket io is running")
-})
-// socket io 
-
+server.listen(socketPort, () => {
+	console.log("Socket io is running");
+});
+// socket io
 
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bq2ef3t.mongodb.net/?retryWrites=true&w=majority`;
@@ -64,7 +63,7 @@ const client = new MongoClient(uri, {
 async function run() {
 	try {
 		const usersCollection = client.db("meetcastDb").collection("users");
-		
+
 		// Send a ping to confirm a successful connection
 		await client.db("admin").command({ ping: 1 });
 		console.log("Pinged your deployment. You successfully connected to MongoDB!");
