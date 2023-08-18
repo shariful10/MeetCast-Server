@@ -5,7 +5,7 @@ require("dotenv").config();
 const port = process.env.PORT || 5000;
 const socketPort = process.env.PORT || 5001;
 
-// forsocket io
+// for socket io
 const http = require('http');
 const {Server} = require("socket.io");
 
@@ -17,7 +17,7 @@ const io = new Server(server, {
     },
 })
 
-// forsocket io
+// for socket io
 
 // Middleware
 const corsOptions = {
@@ -45,7 +45,7 @@ io.on("connection", (socket)=>{
 server.listen(socketPort, ()=>{
     console.log("Socket io is running")
 })
-// socket io 
+// socket io
 
 
 const { MongoClient, ServerApiVersion } = require("mongodb");
