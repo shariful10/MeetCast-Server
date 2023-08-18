@@ -29,7 +29,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 //middleware
 
-// socket io
+// Socket io
 io.on("connection", (socket) => {
 	console.log(`user Connected ${socket.id}`);
 
@@ -45,8 +45,8 @@ io.on("connection", (socket) => {
 server.listen(socketPort, () => {
 	console.log("Socket io is running");
 });
-// socket io
 
+// JWT authentication
 const verifyJWT = (req, res, next) => {
 	const authorization = req.headers.authorization;
 	if (!authorization) {
@@ -79,7 +79,7 @@ async function run() {
 	try {
 		const usersCollection = client.db("meetcastDb").collection("users");
 
-		// JWT Tokens
+		// JWT tokens
 		app.post("/jwt", (req, res) => {
 			const user = req.body;
 			const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1h" });
