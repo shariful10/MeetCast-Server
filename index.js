@@ -6,16 +6,16 @@ const port = process.env.PORT || 5000;
 const socketPort = process.env.PORT || 5001;
 
 // Forsocket io
-const http = require('http');
-const {Server} = require("socket.io");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: {
-        origin: 'http://localhost:5173',
-        methods: ["GET", "POST"],
-    },
-})
+	cors: {
+		origin: "http://localhost:5173",
+		methods: ["GET", "POST"],
+	},
+});
 
 // forsocket io
 
@@ -29,24 +29,23 @@ app.use(cors(corsOptions));
 app.use(express.json());
 //middleware
 
-// socket io 
-io.on("connection", (socket)=>{
-    console.log(`user Connected ${socket.id}`)
-    
-    socket.join("join_room", (room)=>{
-        socket.join(room)
-    })
+// socket io
+io.on("connection", (socket) => {
+	console.log(`user Connected ${socket.id}`);
 
-    socket.on("the message", (data)=>{
-        socket.broadcast.emit("recieve_message", data)
-    })
-})
+	socket.join("join_room", (room) => {
+		socket.join(room);
+	});
 
-server.listen(socketPort, ()=>{
-    console.log("Socket io is running")
-})
-// socket io 
+	socket.on("the message", (data) => {
+		socket.broadcast.emit("recieve_message", data);
+	});
+});
 
+server.listen(socketPort, () => {
+	console.log("Socket io is running");
+});
+// socket io
 
 const verifyJWT = (req, res, next) => {
 	const authorization = req.headers.authorization;
