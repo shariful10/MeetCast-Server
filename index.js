@@ -33,10 +33,6 @@ app.use(express.json());
 io.on("connection", (socket) => {
 	console.log(`user Connected ${socket.id}`);
 
-	socket.join("join_room", (room) => {
-		socket.join(room);
-	});
-
 	socket.on("the message", (data) => {
 		socket.broadcast.emit("recieve_message", data);
 	});
