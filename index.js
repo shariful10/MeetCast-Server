@@ -5,7 +5,7 @@ require("dotenv").config();
 const port = process.env.PORT || 5000;
 const socketPort = process.env.PORT || 5001;
 
-// forsocket io
+// Forsocket io
 const http = require('http');
 const {Server} = require("socket.io");
 
