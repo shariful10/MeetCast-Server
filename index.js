@@ -32,6 +32,7 @@ app.use(express.json());
 io.on("connection", (socket) => {
 	console.log(`user Connected ${socket.id}`);
 	socket.on("join_room", (data) => {
+		console.log("setting room", data)
 		socket.join(data);
 	});
 	socket.on("messege to server", (data) => {
