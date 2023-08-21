@@ -2,8 +2,8 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 require("dotenv").config();
-const port = process.env.PORT || 5000;
-const socketPort = process.env.PORT || 5001;
+const port = process.env.EXPRESS_PORT || 5000;
+const socketPort = process.env.SOCKET_PORT || 5001;
 
 // for socket io
 const http = require("http");
@@ -12,7 +12,7 @@ const { Server } = require("socket.io");
 const server = http.createServer(app);
 const io = new Server(server, {
 	cors: {
-		origin: "https://meetcast.vercel.app",
+		origin: "http://localhost:5173",
 		methods: ["GET", "POST"],
 	},
 });
@@ -21,7 +21,6 @@ const io = new Server(server, {
 
 // Middleware
 const corsOptions = {
-	origin: "*",
 	credentials: true,
 	optionSuccessStatus: 200,
 };
@@ -32,14 +31,13 @@ app.use(express.json());
 // Socket io
 io.on("connection", (socket) => {
 	console.log(`user Connected ${socket.id}`);
-
 	socket.on("join_room", (data) => {
 		socket.join(data);
 	});
-
-	socket.on("the message", (data) => {
-		// socket.to(data.room).emit("recieve_message", data);
-		socket.broadcast.emit("recieve_message", data);
+	socket.on("messege to server", (data) => {
+		console.log("main chat", data.room)
+		socket.to(data.room).emit("recieve_message", data);
+		// socket.broadcast.emit("recieve_message", data);
 	});
 });
 
