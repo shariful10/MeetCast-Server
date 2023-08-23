@@ -62,6 +62,7 @@ const client = new MongoClient(uri, {
 async function run() {
 	try {
 		const usersCollection = client.db("meetcastDb").collection("users");
+		const roomsCollection = client.db("meetcastDb").collection("rooms");
 
 		// JWT tokens
 		app.post("/jwt", (req, res) => {
@@ -87,6 +88,18 @@ async function run() {
 		app.get("/users/:email", async (req, res) => {
 			const email = req.params.email;
 			const result = await usersCollection.findOne({ email: email });
+			res.send(result);
+		});
+
+		// Room Save to Database
+		app.post("/rooms", async (req, res) => {
+			const myRoom = req.body;
+			const result = await roomsCollection.insertOne(myRoom);
+			res.send(result);
+		});
+
+		app.get("/rooms/:email", async (req, res) => {
+			const result = await roomsCollection.find().toArray();
 			res.send(result);
 		});
 
