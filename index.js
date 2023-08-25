@@ -47,7 +47,7 @@ server.listen(socketPort, () => {
 });
 // socket io
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion,ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bq2ef3t.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -103,6 +103,26 @@ async function run() {
 			res.send(result);
 		});
 
+		app.put("/rooms/:roomId", async (req, res) => {
+			const roomId = req.params.roomId;
+			const { newName } = req.body;
+		  
+			try {
+			  const updateResult = await roomsCollection.updateOne(
+				{ _id: new ObjectId(roomId) }, // Use new ObjectId()
+				{ $set: { roomName: newName } }
+			  );
+		  
+			  if (updateResult.modifiedCount > 0) {
+				res.status(200).send("Room renamed successfully");
+			  } else {
+				res.status(404).send("Room not found");
+			  }
+			} catch (error) {
+			  console.error("Error updating room:", error);
+			  res.status(500).send("An error occurred while renaming the room");
+			}
+		  });
 
 		// Send a ping to confirm a successful connection
 		await client.db("admin").command({ ping: 1 });
