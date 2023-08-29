@@ -63,7 +63,8 @@ async function run() {
 	try {
 		const usersCollection = client.db("meetcastDb").collection("users");
 		const roomsCollection = client.db("meetcastDb").collection("rooms");
-
+		const meetingsCollection = client.db("meetcastDb").collection("meetings");
+		
 		// JWT tokens
 		app.post("/jwt", (req, res) => {
 			const user = req.body;
@@ -123,6 +124,20 @@ async function run() {
 			  res.status(500).send("An error occurred while renaming the room");
 			}
 		  });
+
+		  app.post("/schedule-meeting", async (req, res) => {
+			try {
+				const meetingData = req.body; // Meeting data received from the frontend
+		
+				// Store the meeting data in the "meetings" collection
+				const result = await meetingsCollection.insertOne(meetingData);
+		
+				res.status(200).send("Meeting scheduled successfully");
+			} catch (error) {
+				console.error("Error scheduling meeting:", error);
+				res.status(500).send("An error occurred while scheduling the meeting");
+			}
+		});
 		  
 		
 		// Send a ping to confirm a successful connection
