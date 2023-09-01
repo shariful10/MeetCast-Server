@@ -3,7 +3,7 @@ const app = express();
 const cors = require("cors");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
-const socketPort = process.env.SOCKET_PORT || 5001;
+const socketPort = process.env.SOCKET_PORT || 5002;
 
 // for socket io
 const http = require("http");
@@ -151,6 +151,19 @@ async function run() {
 			}
 		  });
 
+		  app.get("/rooms/:email", async (req, res) => {
+			const result = await roomsCollection.find().toArray();
+			res.send(result);
+		});
+
+
+		app.get("/user-meetings/:email", async (req, res) => {
+			const email = req.params.email;
+			// Query your MongoDB collection to retrieve meetings for the user with the specified email
+			const meetings = await meetingsCollection.find({ userEmail: email }).toArray();
+			res.json(meetings);
+		});
+		
 		  app.post("/schedule-meeting", async (req, res) => {
 			try {
 				const meetingData = req.body; // Meeting data received from the frontend
