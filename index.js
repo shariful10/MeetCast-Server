@@ -26,11 +26,12 @@ app.use(express.json());
 io.on("connection", (socket) => {
 	console.log(`user Connected ${socket.id}`);
 	socket.on("join_room", (data) => {
-		console.log("setting room", data)
+		console.log("joining room", data)
 		socket.join(data);
 	});
+	
 	socket.on("messege to server", (data) => {
-		console.log("main chat", data.room)
+		console.log("setting room", data.room)
 		socket.to(data.room).emit("recieve_message", data);
 		// socket.broadcast.emit("recieve_message", data);
 	});
@@ -57,6 +58,8 @@ async function run() {
 	try {
 		const usersCollection = client.db("meetcastDb").collection("users");
 		const roomsCollection = client.db("meetcastDb").collection("rooms");
+		const profileCollection = client.db("meetcastDb").collection("profile");
+
 		const meetingsCollection = client.db("meetcastDb").collection("meetings");
 
 		// JWT tokens
@@ -65,6 +68,21 @@ async function run() {
 			const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1h" });
 			res.send({ token });
 		});
+
+		//userProfile Information
+
+		app.post('/userProfile',async (req, res) =>{
+			const userProfile = req.body;
+			const result = await profileCollection.insertOne(userProfile);
+			res.send(result);
+		})
+
+		app.get('/userProfile', async(req, res)=>{
+			const result = await profileCollection.find().toArray();
+			console.log(result)
+			res.send(result);
+		})
+
 
 		// User collection
 		app.put("/users/:email", async (req, res) => {
