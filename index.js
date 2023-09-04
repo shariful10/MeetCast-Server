@@ -17,16 +17,10 @@ const io = new Server(server, {
 	},
 });
 
-// for socket io
-
-// Middleware
-const corsOptions = {
-	credentials: true,
-	optionSuccessStatus: 200,
-};
-app.use(cors(corsOptions));
-app.use(express.json());
 //middleware
+app.use(cors());
+app.use(express.json());
+
 
 // Socket io
 io.on("connection", (socket) => {
@@ -47,7 +41,7 @@ server.listen(socketPort, () => {
 });
 // socket io
 
-const { MongoClient, ServerApiVersion, ObjectId} = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bq2ef3t.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -64,7 +58,7 @@ async function run() {
 		const usersCollection = client.db("meetcastDb").collection("users");
 		const roomsCollection = client.db("meetcastDb").collection("rooms");
 		const meetingsCollection = client.db("meetcastDb").collection("meetings");
-		
+
 		// JWT tokens
 		app.post("/jwt", (req, res) => {
 			const user = req.body;
@@ -92,6 +86,104 @@ async function run() {
 			res.send(result);
 		});
 
+		// Room Save to Database
+		app.post("/rooms", async (req, res) => {
+			const myRoom = req.body;
+			const result = await roomsCollection.insertOne(myRoom);
+			res.send(result);
+		});
+
+		app.get("/rooms/:email", async (req, res) => {
+			const result = await roomsCollection.find().toArray();
+			res.send(result);
+		});
+
+		app.put("/rooms/:roomId", async (req, res) => {
+			const roomId = req.params.roomId;
+			const { newName } = req.body;
+
+			try {
+				const updateResult = await roomsCollection.updateOne(
+					{ _id: new ObjectId(roomId) }, // Use new ObjectId()
+					{ $set: { roomName: newName } }
+				);
+
+				if (updateResult.modifiedCount > 0) {
+					res.status(200).send("Room renamed successfully");
+				} else {
+					res.status(404).send("Room not found");
+				}
+			} catch (error) {
+				console.error("Error updating room:", error);
+				res.status(500).send("An error occurred while renaming the room");
+			}
+		});
+
+		app.get("/rooms/:email", async (req, res) => {
+			const result = await roomsCollection.find().toArray();
+			res.send(result);
+		});
+
+		app.put("/rooms/:roomId", async (req, res) => {
+			const roomId = req.params.roomId;
+			const { newName } = req.body;
+
+			try {
+				const updateResult = await roomsCollection.updateOne(
+					{ _id: new ObjectId(roomId) }, // Use new ObjectId()
+					{ $set: { roomName: newName } }
+				);
+
+				if (updateResult.modifiedCount > 0) {
+					res.status(200).send("Room renamed successfully");
+				} else {
+					res.status(404).send("Room not found");
+				}
+			} catch (error) {
+				console.error("Error updating room:", error);
+				res.status(500).send("An error occurred while renaming the room");
+			}
+		});
+
+		app.get("/rooms/:email", async (req, res) => {
+			const result = await roomsCollection.find().toArray();
+			res.send(result);
+		});
+
+		app.get("/meetings/:email", async (req, res) => {
+			const result = await meetingsCollection.find().toArray();
+			res.send(result);
+		});
+
+		app.post("/schedule-meeting", async (req, res) => {
+			try {
+				const meetingData = req.body;
+				const result = await meetingsCollection.insertOne(meetingData);
+
+				res.status(200).send("Meeting scheduled successfully");
+			} catch (error) {
+				console.error("Error scheduling meeting:", error);
+				res.status(500).send("An error occurred while scheduling the meeting");
+			}
+		});
+
+
+		app.delete("/meetings/:meetingId", async (req, res) => {
+			const meetingId = req.params.meetingId;
+		
+			try {
+				const deleteResult = await meetingsCollection.deleteOne({ _id: new ObjectId(meetingId) });
+		
+				if (deleteResult.deletedCount === 1) {
+					res.status(200).send("Meeting deleted successfully");
+				} else {
+					res.status(404).send("Meeting not found");
+				}
+			} catch (error) {
+				console.error("Error deleting meeting:", error);
+				res.status(500).send("An error occurred while deleting the meeting");
+			}
+		});
 
 		// Send a ping to confirm a successful connection
 		await client.db("admin").command({ ping: 1 });
