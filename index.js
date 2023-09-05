@@ -21,17 +21,16 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-
 // Socket io
 io.on("connection", (socket) => {
 	console.log(`user Connected ${socket.id}`);
 	socket.on("join_room", (data) => {
-		console.log("joining room", data)
+		console.log("joining room", data);
 		socket.join(data);
 	});
 
 	socket.on("messege to server", (data) => {
-		console.log("setting room", data.room)
+		console.log("setting room", data.room);
 		socket.to(data.room).emit("recieve_message", data);
 		// socket.broadcast.emit("recieve_message", data);
 	});
@@ -71,18 +70,17 @@ async function run() {
 
 		//userProfile Information
 
-		app.post('/userProfile', async (req, res) => {
+		app.post("/userProfile", async (req, res) => {
 			const userProfile = req.body;
 			const result = await profileCollection.insertOne(userProfile);
 			res.send(result);
-		})
+		});
 
-		app.get('/userProfile', async (req, res) => {
+		app.get("/userProfile", async (req, res) => {
 			const result = await profileCollection.find().toArray();
-			console.log(result)
+			console.log(result);
 			res.send(result);
-		})
-
+		});
 
 		// User collection
 		app.put("/users/:email", async (req, res) => {
@@ -185,12 +183,12 @@ async function run() {
 			}
 		});
 
-
-		app.delete("/meetings/:meetingId", async (req, res) => {
-			const meetingId = req.params.meetingId;
-
+		app.delete("/meetings/:id", async (req, res) => {
+			const meetingId = req.params.id;
 			try {
-				const deleteResult = await meetingsCollection.deleteOne({ _id: new ObjectId(meetingId) });
+				const deleteResult = await meetingsCollection.deleteOne({
+					_id: new ObjectId(meetingId),
+				});
 
 				if (deleteResult.deletedCount === 1) {
 					res.status(200).send("Meeting deleted successfully");
@@ -203,10 +201,9 @@ async function run() {
 			}
 		});
 
-
 		// Get meeting by ID
-		app.get("/meetings/:meetingId", async (req, res) => {
-			const meetingId = req.params.meetingId;
+		app.get("/meetings/:id", async (req, res) => {
+			const meetingId = req.params.id;
 
 			try {
 				const result = await meetingsCollection.findOne({ _id: new ObjectId(meetingId) });
@@ -221,7 +218,6 @@ async function run() {
 				res.status(500).send("An error occurred while fetching the meeting");
 			}
 		});
-
 
 		// Send a ping to confirm a successful connection
 		await client.db("admin").command({ ping: 1 });
