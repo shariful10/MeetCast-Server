@@ -166,11 +166,14 @@ async function run() {
 			res.send(result);
 		});
 
+
+		// get specific meeting
 		app.get("/meetings/:email", async (req, res) => {
 			const result = await meetingsCollection.find().toArray();
 			res.send(result);
 		});
 
+		// save meeting
 		app.post("/schedule-meeting", async (req, res) => {
 			try {
 				const meetingData = req.body;
@@ -183,6 +186,7 @@ async function run() {
 			}
 		});
 
+		// delete meeting
 		app.delete("/meetings/:id", async (req, res) => {
 			const meetingId = req.params.id;
 			try {
@@ -198,24 +202,6 @@ async function run() {
 			} catch (error) {
 				console.error("Error deleting meeting:", error);
 				res.status(500).send("An error occurred while deleting the meeting");
-			}
-		});
-
-		// Get meeting by ID
-		app.get("/meetings/:id", async (req, res) => {
-			const meetingId = req.params.id;
-
-			try {
-				const result = await meetingsCollection.findOne({ _id: new ObjectId(meetingId) });
-
-				if (result) {
-					res.json(result);
-				} else {
-					res.status(404).send("Meeting not found");
-				}
-			} catch (error) {
-				console.error("Error fetching meeting:", error);
-				res.status(500).send("An error occurred while fetching the meeting");
 			}
 		});
 
