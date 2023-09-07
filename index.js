@@ -3,7 +3,7 @@ const app = express();
 const cors = require("cors");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
-const socketPort = process.env.SOCKET_PORT || 5002;
+const socketPort = process.env.SOCKET_PORT || 5001;
 
 // for socket io
 const http = require("http");
@@ -41,6 +41,9 @@ io.on("connection", (socket) => {
 		socket.to(data.room).emit("recieve_message", data);
 		// socket.broadcast.emit("recieve_message", data);
 	});
+	socket.on("disconnect",()=>{
+		console.log("user Disconnected", socket.id)
+	})
 });
 
 server.listen(socketPort, () => {
@@ -65,7 +68,6 @@ async function run() {
 		const usersCollection = client.db("meetcastDb").collection("users");
 		const roomsCollection = client.db("meetcastDb").collection("rooms");
 		const profileCollection = client.db("meetcastDb").collection("profile");
-
 		const meetingsCollection = client.db("meetcastDb").collection("meetings");
 		
 		// JWT tokens
@@ -83,9 +85,19 @@ async function run() {
 			res.send(result);
 		})
 
+		app.put("/userProfile/:email", async (req,res) =>{
+			const updateUserProfile = req.body;
+			const userEmail = req.params.email;
+
+			const result = await profileCollection.updateOne(
+				{ _id: ObjectId(userEmail) }, // Use the user's ID to identify the profile to update
+				{ $set: updateUserProfile } // Update the profile with the new data from the request body
+			  );
+			console.log(result)
+		})
+
 		app.get('/userProfile', async(req, res)=>{
 			const result = await profileCollection.find().toArray();
-			console.log(result)
 			res.send(result);
 		})
 
