@@ -3,7 +3,7 @@ const app = express();
 const cors = require("cors");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
-const socketPort = process.env.PORT || 5001;
+const socketPort = process.env.SOCKET_PORT || 5001;
 const { generateToken04 } = require("./zegoServerAssistant");
 
 // for socket io
@@ -17,6 +17,29 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
+//middleware
+app.use(cors());
+app.use(express.json());
+
+// Socket io
+io.on("connection", (socket) => {
+  console.log(`user Connected ${socket.id}`);
+  socket.on("join_room", (data) => {
+    console.log("joining room", data);
+    socket.join(data);
+  });
+
+  socket.on("messege to server", (data) => {
+    console.log("setting room", data.room);
+    socket.to(data.room).emit("recieve_message", data);
+    // socket.broadcast.emit("recieve_message", data);
+  });
+});
+
+server.listen(socketPort, () => {
+  console.log("Socket io is running");
+});
+// socket io
 
 // For ZegoCLoud
 app.get("/token", (req, res) => {
@@ -39,38 +62,7 @@ app.get("/token", (req, res) => {
 
 // For ZegoCLoud
 
-// for socket io
-
-// Middleware
-const corsOptions = {
-  origin: "*",
-  credentials: true,
-  optionSuccessStatus: 200,
-};
-app.use(cors(corsOptions));
-app.use(express.json());
-//middleware
-
-// Socket io
-io.on("connection", (socket) => {
-  console.log(`user Connected ${socket.id}`);
-
-  socket.on("join_room", (data) => {
-    socket.join(data);
-  });
-
-  socket.on("the message", (data) => {
-    // socket.to(data.room).emit("recieve_message", data);
-    socket.broadcast.emit("recieve_message", data);
-  });
-});
-
-server.listen(socketPort, () => {
-  console.log("Socket io is running");
-});
-// socket io
-
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bq2ef3t.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -85,6 +77,159 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const usersCollection = client.db("meetcastDb").collection("users");
+    const roomsCollection = client.db("meetcastDb").collection("rooms");
+    const profileCollection = client.db("meetcastDb").collection("profile");
+
+    const meetingsCollection = client.db("meetcastDb").collection("meetings");
+
+    // JWT tokens
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
+
+    //userProfile Information
+
+    app.post("/userProfile", async (req, res) => {
+      const userProfile = req.body;
+      const result = await profileCollection.insertOne(userProfile);
+      res.send(result);
+    });
+
+    app.get("/userProfile", async (req, res) => {
+      const result = await profileCollection.find().toArray();
+      console.log(result);
+      res.send(result);
+    });
+
+    // User collection
+    app.put("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: user,
+      };
+      const result = await usersCollection.updateOne(
+        { email: email },
+        updateDoc,
+        options
+      );
+      console.log(result);
+      res.send(result);
+    });
+
+    // Get User
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await usersCollection.findOne({ email: email });
+      res.send(result);
+    });
+
+    // Room Save to Database
+    app.post("/rooms", async (req, res) => {
+      const myRoom = req.body;
+      const result = await roomsCollection.insertOne(myRoom);
+      res.send(result);
+    });
+
+    app.get("/rooms/:email", async (req, res) => {
+      const result = await roomsCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.put("/rooms/:roomId", async (req, res) => {
+      const roomId = req.params.roomId;
+      const { newName } = req.body;
+
+      try {
+        const updateResult = await roomsCollection.updateOne(
+          { _id: new ObjectId(roomId) }, // Use new ObjectId()
+          { $set: { roomName: newName } }
+        );
+
+        if (updateResult.modifiedCount > 0) {
+          res.status(200).send("Room renamed successfully");
+        } else {
+          res.status(404).send("Room not found");
+        }
+      } catch (error) {
+        console.error("Error updating room:", error);
+        res.status(500).send("An error occurred while renaming the room");
+      }
+    });
+
+    app.get("/rooms/:email", async (req, res) => {
+      const result = await roomsCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.put("/rooms/:roomId", async (req, res) => {
+      const roomId = req.params.roomId;
+      const { newName } = req.body;
+
+      try {
+        const updateResult = await roomsCollection.updateOne(
+          { _id: new ObjectId(roomId) }, // Use new ObjectId()
+          { $set: { roomName: newName } }
+        );
+
+        if (updateResult.modifiedCount > 0) {
+          res.status(200).send("Room renamed successfully");
+        } else {
+          res.status(404).send("Room not found");
+        }
+      } catch (error) {
+        console.error("Error updating room:", error);
+        res.status(500).send("An error occurred while renaming the room");
+      }
+    });
+
+    app.get("/rooms/:email", async (req, res) => {
+      const result = await roomsCollection.find().toArray();
+      res.send(result);
+    });
+
+    // get specific meeting
+    app.get("/meetings/:email", async (req, res) => {
+      const result = await meetingsCollection.find().toArray();
+      res.send(result);
+    });
+
+    // save meeting
+    app.post("/schedule-meeting", async (req, res) => {
+      try {
+        const meetingData = req.body;
+        const result = await meetingsCollection.insertOne(meetingData);
+
+        res.status(200).send("Meeting scheduled successfully");
+      } catch (error) {
+        console.error("Error scheduling meeting:", error);
+        res.status(500).send("An error occurred while scheduling the meeting");
+      }
+    });
+
+    // delete meeting
+    app.delete("/meetings/:id", async (req, res) => {
+      const meetingId = req.params.id;
+      try {
+        const deleteResult = await meetingsCollection.deleteOne({
+          _id: new ObjectId(meetingId),
+        });
+
+        if (deleteResult.deletedCount === 1) {
+          res.status(200).send("Meeting deleted successfully");
+        } else {
+          res.status(404).send("Meeting not found");
+        }
+      } catch (error) {
+        console.error("Error deleting meeting:", error);
+        res.status(500).send("An error occurred while deleting the meeting");
+      }
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
@@ -102,5 +247,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Meetcast is running on port http://localhost:${port}`);
+  console.log(`Meetcast is running on port ${port}`);
 });
