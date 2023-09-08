@@ -3,42 +3,41 @@ const app = express();
 const cors = require("cors");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
-const socketPort = process.env.SOCKET_PORT || 5001;
+// const socketPort = process.env.PORT || 5001;
 const { generateToken04 } = require("./zegoServerAssistant");
 
 // for socket io
-const http = require("http");
-const { Server } = require("socket.io");
+// const http = require("http");
+// const { Server } = require("socket.io");
 
-const server = http.createServer(app);
-const io = new Server(server, {
-	cors: {
-		origin: "http://localhost:5173",
-		methods: ["GET", "POST"],
-	},
-});
+// const server = http.createServer(app);
+// const io = new Server(server, {
+// 	cors: {
+// 		origin: "https://meetcast-f74c8.web.app",
+// 		methods: ["GET", "POST"],
+// 	},
+// });
 //middleware
 app.use(cors());
 app.use(express.json());
 
-// Socket io
-io.on("connection", (socket) => {
-	console.log(`user Connected ${socket.id}`);
-	socket.on("join_room", (data) => {
-		console.log("joining room", data);
-		socket.join(data);
-	});
+// // Socket io
+// io.on("connection", (socket) => {
+// 	console.log(`user Connected ${socket.id}`);
+// 	socket.on("join_room", (data) => {
+// 		console.log("joining room", data);
+// 		socket.join(data);
+// 	});
 
-	socket.on("messege to server", (data) => {
-		console.log("setting room", data.room);
-		socket.to(data.room).emit("recieve_message", data);
-		// socket.broadcast.emit("recieve_message", data);
-	});
-});
+// 	socket.on("messege to server", (data) => {
+// 		console.log("setting room", data.room);
+// 		socket.to(data.room).emit("recieve_message", data);
+// 	});
+// });
 
-server.listen(socketPort, () => {
-	console.log("Socket io is running");
-});
+// server.listen(socketPort, () => {
+// 	console.log("Socket io is running");
+// });
 // socket io
 
 // For ZegoCLoud
@@ -73,7 +72,6 @@ async function run() {
 		const usersCollection = client.db("meetcastDb").collection("users");
 		const roomsCollection = client.db("meetcastDb").collection("rooms");
 		const profileCollection = client.db("meetcastDb").collection("profile");
-
 		const meetingsCollection = client.db("meetcastDb").collection("meetings");
 
 		// JWT tokens
@@ -186,7 +184,7 @@ async function run() {
 		// get specific meeting
 		app.get("/meetings/:email", async (req, res) => {
 			const email = req.params.email;
-			const result = await meetingsCollection.find({ email: email }).toArray();
+			const result = await meetingsCollection.find({email: email}).toArray();
 			res.send(result);
 		});
 
