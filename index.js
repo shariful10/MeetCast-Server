@@ -5,7 +5,7 @@ const SSLCommerzPayment = require("sslcommerz-lts");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 const { generateToken04 } = require("./zegoServerAssistant");
-// const socketPort = process.env.PORT || 5001;
+const socketPort = process.env.PORT || 5001;
 
 // sslcommerz payment key
 const store_id = process.env.STORE_ID;
@@ -280,7 +280,7 @@ async function run() {
         total_amount: product?.price,
         currency: "USD",
         tran_id: tranId, // use unique tran_id for each api call
-        success_url: `https://meetcast-f74c8.web.app/payment/success/${tranId}`,
+        success_url: `http://localhost:5000/payment/success/${tranId}`,
         fail_url: "http://localhost:3030/fail",
         cancel_url: "http://localhost:3030/cancel",
         ipn_url: "http://localhost:3030/ipn",
