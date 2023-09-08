@@ -3,7 +3,7 @@ const app = express();
 const cors = require("cors");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
-// const socketPort = process.env.PORT || 5001;
+const socketPort = process.env.PORT || 5001;
 const { generateToken04 } = require("./zegoServerAssistant");
 
 // for socket io
