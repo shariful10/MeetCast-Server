@@ -45,7 +45,6 @@ app.use(express.json());
   });
   socket.on("disconnect",()=>{
 	console.log("user Disconnected", socket.id)
-})
 });
 
 server.listen(socketPort, () => {
