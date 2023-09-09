@@ -17,6 +17,7 @@ const { generateToken04 } = require("./zegoServerAssistant");
 // 		methods: ["GET", "POST"],
 // 	},
 // });
+
 //middleware
 app.use(cors());
 app.use(express.json());
@@ -36,7 +37,6 @@ app.use(express.json());
   });
   socket.on("disconnect",()=>{
 	console.log("user Disconnected", socket.id)
-})
 });
 
 server.listen(socketPort, () => {
