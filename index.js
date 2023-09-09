@@ -34,6 +34,9 @@ io.on("connection", (socket) => {
     socket.to(data.room).emit("recieve_message", data);
     // socket.broadcast.emit("recieve_message", data);
   });
+  socket.on("disconnect",()=>{
+	console.log("user Disconnected", socket.id)
+})
 });
 
 server.listen(socketPort, () => {
