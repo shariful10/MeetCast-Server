@@ -74,7 +74,7 @@ async function run() {
 		const profileCollection = client.db("meetcastDb").collection("profile");
 		const meetingsCollection = client.db("meetcastDb").collection("meetings");
 
-		// JWT tokens
+		// JWT Tokens
 		app.post("/jwt", (req, res) => {
 			const user = req.body;
 			const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
