@@ -1,9 +1,8 @@
-const express = require("express");
+const express = require("express")
 const app = express();
 const cors = require("cors");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
-// const socketPort = process.env.PORT || 5001;
 const { generateToken04 } = require("./zegoServerAssistant");
 const socketRoute = require('./Routes/sockets')
 
@@ -13,18 +12,11 @@ const store_id = process.env.STORE_ID;
 const store_passwd = process.env.STORE_PASS;
 const is_live = false; //true for live, false for sandbox
 
-// for socket io
-
-app.use("sockets", socketRoute)
-
-
 //middleware
 app.use(cors());
 app.use(express.json());
+app.use("sockets", socketRoute)  //socket.io
 
-// Socket io
-
-// socket io
 
 // For ZegoCLoud
 app.get("/token", (req, res) => {
