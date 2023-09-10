@@ -5,7 +5,8 @@ const SSLCommerzPayment = require("sslcommerz-lts");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 const { generateToken04 } = require("./zegoServerAssistant");
-const socketPort = process.env.SOCKET_PORT || 5001;
+const socketRoute = require('./Routes/sockets')
+
 
 // sslcommerz payment key
 const store_id = process.env.STORE_ID;
@@ -13,16 +14,9 @@ const store_passwd = process.env.STORE_PASS;
 const is_live = false; //true for live, false for sandbox
 
 // for socket io
-const http = require("http");
-const { Server } = require("socket.io");
 
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST"],
-  },
-});
+app.use("sockets", socketRoute)
+
 
 // for socket io
 
@@ -31,26 +25,7 @@ app.use(cors());
 app.use(express.json());
 
 // Socket io
-io.on("connection", (socket) => {
-	console.log(`user Connected ${socket.id}`);
-	socket.on("join_room", (data) => {
-		console.log("joining room", data);
-		socket.join(data);
-	});
 
-  socket.on("messege to server", (data) => {
-    console.log("setting room", data.room);
-    socket.to(data.room).emit("recieve_message", data);
-    // socket.broadcast.emit("recieve_message", data);
-  });
-  socket.on("disconnect",()=>{
-	  console.log("user Disconnected", socket.id)
-  })
-})  
-
-server.listen(socketPort, () => {
-  console.log("Socket io is running");
-});
 // socket io
 
 // For ZegoCLoud
