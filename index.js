@@ -3,42 +3,14 @@ const app = express();
 const cors = require("cors");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
-// const socketPort = process.env.PORT || 5001;
 const { generateToken04 } = require("./zegoServerAssistant");
+const socketServer = require("./Routes/sockets")
 
-// for socket io
-// const http = require("http");
-// const { Server } = require("socket.io");
-
-// const server = http.createServer(app);
-// const io = new Server(server, {
-// 	cors: {
-// 		origin: "https://meetcast-f74c8.web.app",
-// 		methods: ["GET", "POST"],
-// 	},
-// });
 //middleware
 app.use(cors());
 app.use(express.json());
+app.use("/socket", socketServer);
 
-// // Socket io
-// io.on("connection", (socket) => {
-// 	console.log(`user Connected ${socket.id}`);
-// 	socket.on("join_room", (data) => {
-// 		console.log("joining room", data);
-// 		socket.join(data);
-// 	});
-
-// 	socket.on("messege to server", (data) => {
-// 		console.log("setting room", data.room);
-// 		socket.to(data.room).emit("recieve_message", data);
-// 	});
-// });
-
-// server.listen(socketPort, () => {
-// 	console.log("Socket io is running");
-// });
-// socket io
 // For ZegoCLoud
 app.get("/token", (req, res) => {
 	const appID = 2059610707;
