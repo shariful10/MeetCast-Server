@@ -4,7 +4,6 @@ const cors = require("cors");
 const SSLCommerzPayment = require("sslcommerz-lts");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
-const { generateToken04 } = require("./zegoServerAssistant");
 const socketPort = process.env.PORT || 5001;
 
 // sslcommerz payment key
