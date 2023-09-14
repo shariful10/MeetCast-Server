@@ -4,12 +4,29 @@ const cors = require("cors");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
-const socketServer = require("./Routes/sockets")
+
 
 //middleware
 app.use(cors());
 app.use(express.json());
-app.use("/socket", socketServer);
+
+const verifyJWT = (req, res, next) => {
+	const authorization = req.headers.authorization;
+	if (!authorization) {
+		return res.status(401).send({ error: true, message: "Invalid Token" });
+	}
+	console.log(authorization);
+
+	// Bearer token
+	const token = authorization.split(" ")[1];
+	jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+		if (err) {
+			return res.status(401).send({ error: true, message: "Invalid Token" });
+		}
+		req.decoded = decoded;
+		next();
+	});
+};
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bq2ef3t.mongodb.net/?retryWrites=true&w=majority`;
