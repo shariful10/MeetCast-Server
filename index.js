@@ -1,80 +1,37 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const SSLCommerzPayment = require("sslcommerz-lts");
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
-const socketPort = process.env.PORT || 5001;
+const SSLCommerzPayment = require("sslcommerz-lts");
+
+//middleware
+app.use(cors());
+app.use(express.json());
 
 // sslcommerz payment key
 const store_id = process.env.STORE_ID;
 const store_passwd = process.env.STORE_PASS;
 const is_live = false; //true for live, false for sandbox
 
-// for socket io
-// const http = require("http");
-// const { Server } = require("socket.io");
+const verifyJWT = (req, res, next) => {
+  const authorization = req.headers.authorization;
+  if (!authorization) {
+    return res.status(401).send({ error: true, message: "Invalid Token" });
+  }
+  console.log(authorization);
 
-// const server = http.createServer(app);
-// const io = new Server(server, {
-//   cors: {
-//     origin: "http://localhost:5173",
-//     methods: ["GET", "POST"],
-//   },
-// });
-
-// for socket io
-
-// Middleware
-const corsOptions = {
-  credentials: true,
-  optionSuccessStatus: 200,
+  // Bearer token
+  const token = authorization.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ error: true, message: "Invalid Token" });
+    }
+    req.decoded = decoded;
+    next();
+  });
 };
-app.use(cors(corsOptions));
-app.use(express.json());
-//middleware
-app.use(cors());
-app.use(express.json());
-
-// // Socket io
-// io.on("connection", (socket) => {
-// 	console.log(`user Connected ${socket.id}`);
-// 	socket.on("join_room", (data) => {
-// 		console.log("joining room", data);
-// 		socket.join(data);
-// 	});
-
-// 	socket.on("messege to server", (data) => {
-// 		console.log("setting room", data.room);
-// 		socket.to(data.room).emit("recieve_message", data);
-// 	});
-// });
-
-// server.listen(socketPort, () => {
-// 	console.log("Socket io is running");
-// });
-// socket io
-
-// For ZegoCLoud
-app.get("/token", (req, res) => {
-  const appID = 2059610707;
-  const serverSecret = "5692269139171731f75d087ec95f3344";
-  const userId = "user1";
-  const effectiveTimeInSeconds = 3600;
-  const payload = "";
-
-  const token = generateToken04(
-    appID,
-    userId,
-    serverSecret,
-    effectiveTimeInSeconds,
-    payload
-  );
-  console.log("Akhtar:", token);
-  res.send(token);
-});
-
-// For ZegoCLoud
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bq2ef3t.mongodb.net/?retryWrites=true&w=majority`;
@@ -91,21 +48,48 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const usersCollection = client.db("meetcastDb").collection("users");
+    const profileCollection = client.db("meetcastDb").collection("profile");
+    const meetingsCollection = client.db("meetcastDb").collection("meetings");
+    const blogsCollection = client.db("meetcastDb").collection("blogs");
     const userAddress = client
       .db("meetcastDb")
       .collection("UserPaymentAddress ");
     const monthlyCololection = client.db("meetcastDb").collection("monthly");
     const yearlyCololection = client.db("meetcastDb").collection("yearly");
     const orderCololection = client.db("meetcastDb").collection("order");
-    const roomsCollection = client.db("meetcastDb").collection("rooms");
 
-    // JWT tokens
+    // JWT Tokens
     app.post("/jwt", (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: "1h",
       });
       res.send({ token });
+    });
+
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      console.log(user);
+      if (user?.role !== "admin") {
+        return res.send({ admin: false });
+      }
+      next();
+    };
+
+    //userProfile Information
+
+    app.post("/userProfile", async (req, res) => {
+      const userProfile = req.body;
+      const result = await profileCollection.insertOne(userProfile);
+      res.send(result);
+    });
+
+    app.get("/userProfile", async (req, res) => {
+      const result = await profileCollection.find().toArray();
+      console.log(result);
+      res.send(result);
     });
 
     // User collection
@@ -125,74 +109,61 @@ async function run() {
       res.send(result);
     });
 
-    // Get User
+    // Get Specific User By Id
+    app.get("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await usersCollection.findOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
+
+    // Get Specific User By Email
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
       const result = await usersCollection.findOne({ email: email });
       res.send(result);
     });
 
-    // Room Save to Database
-    app.post("/rooms", async (req, res) => {
-      const myRoom = req.body;
-      const result = await roomsCollection.insertOne(myRoom);
+    // Get All User
+    app.get("/users", async (req, res) => {
+      const result = await usersCollection.find().toArray();
       res.send(result);
     });
 
-    app.get("/rooms/:email", async (req, res) => {
-      const result = await roomsCollection.find().toArray();
+    // Change User Email Role
+    app.patch("/users/editor/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          role: "editor",
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updatedDoc);
       res.send(result);
     });
 
-    app.put("/rooms/:roomId", async (req, res) => {
-      const roomId = req.params.roomId;
-      const { newName } = req.body;
+    app.get("/users/admin/:email", verifyJWT, verifyAdmin, async (req, res) => {
+      const email = req.params.email;
 
-      try {
-        const updateResult = await roomsCollection.updateOne(
-          { _id: new ObjectId(roomId) }, // Use new ObjectId()
-          { $set: { roomName: newName } }
-        );
-
-        if (updateResult.modifiedCount > 0) {
-          res.status(200).send("Room renamed successfully");
-        } else {
-          res.status(404).send("Room not found");
-        }
-      } catch (error) {
-        console.error("Error updating room:", error);
-        res.status(500).send("An error occurred while renaming the room");
+      if (req.decoded.email !== email) {
+        res.send({ admin: false });
       }
-    });
-
-    app.get("/rooms/:email", async (req, res) => {
-      const result = await roomsCollection.find().toArray();
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { admin: user?.role === "admin" };
       res.send(result);
     });
 
-    app.put("/rooms/:roomId", async (req, res) => {
-      const roomId = req.params.roomId;
-      const { newName } = req.body;
+    app.get("/users/editor/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
 
-      try {
-        const updateResult = await roomsCollection.updateOne(
-          { _id: new ObjectId(roomId) }, // Use new ObjectId()
-          { $set: { roomName: newName } }
-        );
-
-        if (updateResult.modifiedCount > 0) {
-          res.status(200).send("Room renamed successfully");
-        } else {
-          res.status(404).send("Room not found");
-        }
-      } catch (error) {
-        console.error("Error updating room:", error);
-        res.status(500).send("An error occurred while renaming the room");
+      if (req.decoded.email !== email) {
+        res.send({ editor: false });
       }
-    });
 
-    app.get("/rooms/:email", async (req, res) => {
-      const result = await roomsCollection.find().toArray();
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { editor: user?.role === "editor" };
       res.send(result);
     });
 
@@ -235,6 +206,20 @@ async function run() {
       }
     });
 
+    // Save a Blogs Data in Database
+    app.post("/blogs", async (req, res) => {
+      const room = req.body;
+      const result = await blogsCollection.insertOne(room);
+      res.send(result);
+    });
+
+    // Get all Rooms
+    app.get("/blogs", async (req, res) => {
+      const result = await blogsCollection.find().toArray();
+      res.send(result);
+    });
+
+    //  Payment API Start
     app.get("/monthly", async (req, res) => {
       const result = await monthlyCololection.find().toArray();
       res.send(result);
@@ -265,6 +250,7 @@ async function run() {
       }
     });
 
+    //  Yearly
     app.get("/yearly/:id", async (req, res) => {
       try {
         const id = req.params.id;
@@ -283,8 +269,8 @@ async function run() {
       }
     });
 
-    // Payment Gateway SSLcommerz
-    // order
+    // Order start
+
     app.post("/order", async (req, res) => {
       console.log(req.body);
 
@@ -357,7 +343,7 @@ async function run() {
         cus_country,
         cus_phone,
       };
-      console.log("d",Payment);
+      console.log("d", Payment);
 
       console.log(data);
       const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
@@ -408,7 +394,7 @@ async function run() {
       // f
     });
 
-    // Payment User Address
+    // Order end
 
     app.post("/userAddress", async (req, res) => {
       try {
@@ -456,13 +442,13 @@ async function run() {
       }
     });
 
-    app.get("/payment/success/:tranId", async(req, res) => {
-          const id = req.params.tranId
-          const result = await orderCololection.findOne({ transactionId: id })
-          console.log(result);
-          res.send(result)
-          console.log(id);
-    })
+    app.get("/payment/success/:tranId", async (req, res) => {
+      const id = req.params.tranId;
+      const result = await orderCololection.findOne({ transactionId: id });
+      console.log(result);
+      res.send(result);
+      console.log(id);
+    });
 
     app.get("/order", async (req, res) => {
       // console.log(req.params.tranId);
@@ -473,6 +459,8 @@ async function run() {
       res.send(result);
       // console.log(result);
     });
+
+    //  Payment API End
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
