@@ -2,8 +2,9 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
-const { generateToken04 } = require("./zegoServerAssistant");
+// const { generateToken04 } = require("./zegoServerAssistant");
 const socketServer = require("./Routes/sockets")
 
 //middleware
