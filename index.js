@@ -93,10 +93,10 @@ async function run() {
 			res.send(result);
 		});
 
-		// Get Specific User By Id
-		app.get("/users/:id", async (req, res) => {
+		// Delete Specific User By Id
+		app.delete("/users/:id", async (req, res) => {
 			const id = req.params.id;
-			const result = await usersCollection.findOne({ _id: new ObjectId(id) });
+			const result = await usersCollection.deleteOne({ _id: new ObjectId(id) });
 			res.send(result);
 		});
 
