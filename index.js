@@ -4,20 +4,8 @@ const cors = require("cors");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
-// const socketPort = process.env.PORT || 5001;
-const { generateToken04 } = require("./zegoServerAssistant");
 
-// for socket io
-// const http = require("http");
-// const { Server } = require("socket.io");
 
-// const server = http.createServer(app);
-// const io = new Server(server, {
-// 	cors: {
-// 		origin: "https://meetcast-f74c8.web.app",
-// 		methods: ["GET", "POST"],
-// 	},
-// });
 //middleware
 app.use(cors());
 app.use(express.json());
@@ -39,40 +27,6 @@ const verifyJWT = (req, res, next) => {
 		next();
 	});
 };
-
-// // Socket io
-// io.on("connection", (socket) => {
-// 	console.log(`user Connected ${socket.id}`);
-// 	socket.on("join_room", (data) => {
-// 		console.log("joining room", data);
-// 		socket.join(data);
-// 	});
-
-// 	socket.on("messege to server", (data) => {
-// 		console.log("setting room", data.room);
-// 		socket.to(data.room).emit("recieve_message", data);
-// 	});
-// });
-
-// server.listen(socketPort, () => {
-// 	console.log("Socket io is running");
-// });
-// socket io
-
-// For ZegoCLoud
-app.get("/token", (req, res) => {
-	const appID = 2059610707;
-	const serverSecret = "5692269139171731f75d087ec95f3344";
-	const userId = "user1";
-	const effectiveTimeInSeconds = 3600;
-	const payload = "";
-
-	const token = generateToken04(appID, userId, serverSecret, effectiveTimeInSeconds, payload);
-	console.log("Akhtar:", token);
-	res.send(token);
-});
-
-// For ZegoCLoud
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bq2ef3t.mongodb.net/?retryWrites=true&w=majority`;
