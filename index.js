@@ -5,7 +5,6 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
 
-
 //middleware
 app.use(cors());
 app.use(express.json());
@@ -43,9 +42,9 @@ const client = new MongoClient(uri, {
 async function run() {
 	try {
 		const usersCollection = client.db("meetcastDb").collection("users");
-		const roomsCollection = client.db("meetcastDb").collection("rooms");
 		const profileCollection = client.db("meetcastDb").collection("profile");
 		const meetingsCollection = client.db("meetcastDb").collection("meetings");
+		const blogsCollection = client.db("meetcastDb").collection("blogs");
 
 		// JWT Tokens
 		app.post("/jwt", (req, res) => {
@@ -59,7 +58,7 @@ async function run() {
 		const verifyAdmin = async (req, res, next) => {
 			const email = req.decoded.email;
 			const query = { email: email };
-			const user = await userCollection.findOne(query);
+			const user = await usersCollection.findOne(query);
 			console.log(user);
 			if (user?.role !== "admin") {
 				return res.send({ admin: false });
@@ -94,23 +93,23 @@ async function run() {
 			res.send(result);
 		});
 
-		// Delete Specific User By Id
-		app.delete("/users/:id", async (req, res) => {
+		// Get Specific User By Id
+		app.get("/users/:id", async (req, res) => {
 			const id = req.params.id;
-			const result = await usersCollection.deleteOne({ _id: new ObjectId(id) });
+			const result = await usersCollection.findOne({ _id: new ObjectId(id) });
 			res.send(result);
 		});
-		
+
+		// Get Specific User By Email
 		app.get("/users/:email", async (req, res) => {
 			const email = req.params.email;
 			const result = await usersCollection.findOne({ email: email });
 			res.send(result);
 		});
 
-		// Room Save to Database
-		app.post("/rooms", async (req, res) => {
-			const myRoom = req.body;
-			const result = await roomsCollection.insertOne(myRoom);
+		// Get All User
+		app.get("/users", async (req, res) => {
+			const result = await usersCollection.find().toArray();
 			res.send(result);
 		});
 
@@ -131,58 +130,32 @@ async function run() {
 		app.get("/users/admin/:email", verifyJWT, verifyAdmin, async (req, res) => {
 			const email = req.params.email;
 
-			try {
-				const updateResult = await roomsCollection.updateOne(
-					{ _id: new ObjectId(roomId) }, // Use new ObjectId()
-					{ $set: { roomName: newName } }
-				);
-
-				if (updateResult.modifiedCount > 0) {
-					res.status(200).send("Room renamed successfully");
-				} else {
-					res.status(404).send("Room not found");
-				}
-			} catch (error) {
-				console.error("Error updating room:", error);
-				res.status(500).send("An error occurred while renaming the room");
+			if (req.decoded.email !== email) {
+				res.send({ admin: false });
 			}
-		});
-
-		app.get("/rooms/:email", async (req, res) => {
-			const result = await roomsCollection.find().toArray();
+			const query = { email: email };
+			const user = await usersCollection.findOne(query);
+			const result = { admin: user?.role === "admin" };
 			res.send(result);
 		});
 
-		app.put("/rooms/:roomId", async (req, res) => {
-			const roomId = req.params.roomId;
-			const { newName } = req.body;
+		app.get("/users/editor/:email", verifyJWT, async (req, res) => {
+			const email = req.params.email;
 
-			try {
-				const updateResult = await roomsCollection.updateOne(
-					{ _id: new ObjectId(roomId) }, // Use new ObjectId()
-					{ $set: { roomName: newName } }
-				);
-
-				if (updateResult.modifiedCount > 0) {
-					res.status(200).send("Room renamed successfully");
-				} else {
-					res.status(404).send("Room not found");
-				}
-			} catch (error) {
-				console.error("Error updating room:", error);
-				res.status(500).send("An error occurred while renaming the room");
+			if (req.decoded.email !== email) {
+				res.send({ editor: false });
 			}
-		});
 
-		app.get("/rooms/:email", async (req, res) => {
-			const result = await roomsCollection.find().toArray();
+			const query = { email: email };
+			const user = await usersCollection.findOne(query);
+			const result = { editor: user?.role === "editor" };
 			res.send(result);
 		});
 
 		// get specific meeting
 		app.get("/meetings/:email", async (req, res) => {
 			const email = req.params.email;
-			const result = await meetingsCollection.find({email: email}).toArray();
+			const result = await meetingsCollection.find({ email: email }).toArray();
 			res.send(result);
 		});
 
@@ -216,6 +189,19 @@ async function run() {
 				console.error("Error deleting meeting:", error);
 				res.status(500).send("An error occurred while deleting the meeting");
 			}
+		});
+
+		// Save a Blogs Data in Database
+		app.post("/blogs", async (req, res) => {
+			const room = req.body;
+			const result = await blogsCollection.insertOne(room);
+			res.send(result);
+		});
+
+		// Get all Rooms
+		app.get("/blogs", async (req, res) => {
+			const result = await blogsCollection.find().toArray();
+			res.send(result);
 		});
 
 		// Send a ping to confirm a successful connection
