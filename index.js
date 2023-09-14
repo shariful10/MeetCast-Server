@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
 // const socketPort = process.env.PORT || 5001;
 const { generateToken04 } = require("./zegoServerAssistant");
@@ -20,6 +21,24 @@ const { generateToken04 } = require("./zegoServerAssistant");
 //middleware
 app.use(cors());
 app.use(express.json());
+
+const verifyJWT = (req, res, next) => {
+	const authorization = req.headers.authorization;
+	if (!authorization) {
+		return res.status(401).send({ error: true, message: "Invalid Token" });
+	}
+	console.log(authorization);
+
+	// Bearer token
+	const token = authorization.split(" ")[1];
+	jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+		if (err) {
+			return res.status(401).send({ error: true, message: "Invalid Token" });
+		}
+		req.decoded = decoded;
+		next();
+	});
+};
 
 // // Socket io
 // io.on("connection", (socket) => {
@@ -83,6 +102,17 @@ async function run() {
 			res.send({ token });
 		});
 
+		const verifyAdmin = async (req, res, next) => {
+			const email = req.decoded.email;
+			const query = { email: email };
+			const user = await usersCollection.findOne(query);
+			console.log(user);
+			if (user?.role !== "admin") {
+				return res.send({ admin: false });
+			}
+			next();
+		};
+
 		//userProfile Information
 
 		app.post("/userProfile", async (req, res) => {
@@ -110,10 +140,61 @@ async function run() {
 			res.send(result);
 		});
 
-		// Get User
+		// Get Specific User By Id
+		app.get("/users/:id", async (req, res) => {
+			const id = req.params.id;
+			const result = await usersCollection.findOne({ _id: new ObjectId(id) });
+			res.send(result);
+		});
+
+		// Get Specific User By Email
 		app.get("/users/:email", async (req, res) => {
 			const email = req.params.email;
 			const result = await usersCollection.findOne({ email: email });
+			res.send(result);
+		});
+
+		// Get All User
+		app.get("/users", async (req, res) => {
+			const result = await usersCollection.find().toArray();
+			res.send(result);
+		});
+
+		// Change User Email Role
+		app.patch("/users/editor/:id", async (req, res) => {
+			const id = req.params.id;
+			const filter = { _id: new ObjectId(id) };
+			const updatedDoc = {
+				$set: {
+					role: "editor",
+				},
+			};
+			const result = await usersCollection.updateOne(filter, updatedDoc);
+			res.send(result);
+		});
+
+		app.get("/users/admin/:email", verifyJWT, verifyAdmin, async (req, res) => {
+			const email = req.params.email;
+
+			if (req.decoded.email !== email) {
+				res.send({ admin: false });
+			}
+			const query = { email: email };
+			const user = await usersCollection.findOne(query);
+			const result = { admin: user?.role === "admin" };
+			res.send(result);
+		});
+
+		app.get("/users/editor/:email", verifyJWT, async (req, res) => {
+			const email = req.params.email;
+
+			if (req.decoded.email !== email) {
+				res.send({ editor: false });
+			}
+
+			const query = { email: email };
+			const user = await usersCollection.findOne(query);
+			const result = { editor: user?.role === "editor" };
 			res.send(result);
 		});
 
