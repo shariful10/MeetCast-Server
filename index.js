@@ -3,28 +3,11 @@ const app = express();
 const cors = require("cors");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
-const { generateToken04 } = require("./zegoServerAssistant");
-const socketServer = require("./Routes/sockets")
 
 //middleware
 app.use(cors());
 app.use(express.json());
-app.use("/socket", socketServer);
 
-// For ZegoCLoud
-app.get("/token", (req, res) => {
-	const appID = 2059610707;
-	const serverSecret = "5692269139171731f75d087ec95f3344";
-	const userId = "user1";
-	const effectiveTimeInSeconds = 3600;
-	const payload = "";
-
-	const token = generateToken04(appID, userId, serverSecret, effectiveTimeInSeconds, payload);
-	console.log("Akhtar:", token);
-	res.send(token);
-});
-
-// For ZegoCLoud
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bq2ef3t.mongodb.net/?retryWrites=true&w=majority`;
