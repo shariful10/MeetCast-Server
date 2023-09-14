@@ -114,7 +114,7 @@ async function run() {
 			res.send(result);
 		});
 
-		// Change User Email Role
+		// Change User Role By Email
 		app.patch("/users/editor/:id", async (req, res) => {
 			const id = req.params.id;
 			const filter = { _id: new ObjectId(id) };
@@ -127,6 +127,7 @@ async function run() {
 			res.send(result);
 		});
 
+		// Get User Role By Email
 		app.get("/users/admin/:email", verifyJWT, verifyAdmin, async (req, res) => {
 			const email = req.params.email;
 
