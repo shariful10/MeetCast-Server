@@ -5,12 +5,12 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
 const SSLCommerzPayment = require("sslcommerz-lts");
-const socketServer = require("./Routes/sockets")
+const socketServer = require("./Routes/sockets") //socketserver disable if needed
 
 //middleware
 app.use(cors());
 app.use(express.json());
-app.use("/socket", socketServer);
+app.use("/socket", socketServer); //socketserver disable if needed
 
 // sslcommerz payment key
 const store_id = process.env.STORE_ID;
