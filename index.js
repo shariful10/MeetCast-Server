@@ -167,6 +167,13 @@ async function run() {
       res.send(result);
     });
 
+	// Delete a single user from the database
+	app.delete("/users/:id", async (req, res) => {
+		const id = req.params.id;
+		const result = await usersCollection.deleteOne({ _id: new ObjectId(id) });
+		res.send(result);
+	});
+
     // get specific meeting
     app.get("/meetings/:email", async (req, res) => {
       const email = req.params.email;
