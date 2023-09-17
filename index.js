@@ -213,9 +213,59 @@ async function run() {
       res.send(result);
     });
 
-    // Get all Rooms
+    // Get all blogs
     app.get("/blogs", async (req, res) => {
       const result = await blogsCollection.find().toArray();
+      res.send(result);
+    });
+
+    // Get all approved Blogs
+    app.get("/approved-blogs", async (req, res) => {
+      const result = await blogsCollection
+        .find({ status: "approved" })
+        .toArray();
+      res.send(result);
+    });
+
+    // user added blogs
+    app.get("/my-blogs", verifyJWT, async (req, res) => {
+      const email = req.query.email;
+
+      // Return if no email found
+      if (!email) {
+        res.send([]);
+      }
+
+      // Verify if the given email match the token email
+      const decodedEmail = req.decoded.email;
+      if (email !== decodedEmail) {
+        return res
+          .status(403)
+          .send({ error: true, message: "Forbidden access" });
+      }
+
+      // Now collect only selected Instructor class item
+      const query = { email: email };
+      const result = await blogsCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.patch("/blogs/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedBlog = req.body;
+
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          title: updatedBlog.title,
+          subTitle: updatedBlog.subTitle,
+          image: updatedBlog.image,
+          description: updatedBlog.description,
+        },
+      };
+      const result = await blogsCollection.updateOne(query, updateDoc, {
+        new: true,
+      });
       res.send(result);
     });
 
@@ -375,7 +425,7 @@ async function run() {
 
         if (result.modifiedCount > 0) {
           res.redirect(
-            `http://localhost:5173/payment/success/${req.params.tranId}`
+            `https://meetcast2.netlify.app/payment/success/${req.params.tranId}`
           );
         }
       });
@@ -386,7 +436,7 @@ async function run() {
         });
         if (result.deletedCount) {
           res.redirect(
-            `http://localhost:5173/payment/faild/${req.params.tranId}`
+            `https://meetcast2.netlify.app/payment/faild/${req.params.tranId}`
           );
         }
       });
