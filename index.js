@@ -5,10 +5,12 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
 const SSLCommerzPayment = require("sslcommerz-lts");
+const socketServer = require("./Routes/sockets"); //socketserver disable if needed
 
 //middleware
 app.use(cors());
 app.use(express.json());
+app.use("/socket", socketServer); //socketserver disable if needed
 
 // sslcommerz payment key
 const store_id = process.env.STORE_ID;
@@ -167,6 +169,13 @@ async function run() {
       res.send(result);
     });
 
+    // Delete a single user from the database
+    app.delete("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await usersCollection.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
+
     // get specific meeting
     app.get("/meetings/:email", async (req, res) => {
       const email = req.params.email;
@@ -274,6 +283,11 @@ async function run() {
       const result = await monthlyCololection.find().toArray();
       res.send(result);
     });
+    //  Payment API Start
+    app.get("/monthly", async (req, res) => {
+      const result = await monthlyCololection.find().toArray();
+      res.send(result);
+    });
 
     app.get("/yearly", async (req, res) => {
       const result = await yearlyCololection.find().toArray();
@@ -345,8 +359,8 @@ async function run() {
         ),
         currency: "USD",
         tran_id: tran_id, // use unique tran_id for each api call
-        success_url: `http://localhost:5000/payment/success/${tran_id}`,
-        fail_url: `http://localhost:5000/payment/faild/${tran_id}`,
+        success_url: `${process.env.BACKEND_URL}/payment/success/${tran_id}`,
+        fail_url: `${process.env.BACKEND_URL}/payment/faild/${tran_id}`,
         cancel_url: "http://localhost:3030/cancel",
         ipn_url: "http://localhost:3030/ipn",
         shipping_method: "Courier",
@@ -395,53 +409,67 @@ async function run() {
       };
       console.log("d", Payment);
 
-      console.log(data);
-      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
-      sslcz.init(data).then((apiResponse) => {
-        // console.log(apiResponse);
-        // Redirect the user to payment gateway
-        let GatewayPageURL = apiResponse.GatewayPageURL;
-        res.send({ url: GatewayPageURL });
-        const finalOrder = {
-          products,
-          paidStatus: false,
-          transactionId: tran_id,
-        };
-        const result = orderCololection.insertOne(finalOrder);
-        console.log("Redirecting to: ", GatewayPageURL);
-      });
-
-      app.post("/payment/success/:tranId", async (req, res) => {
-        // console.log("tran", req.params.tranId);
-        const result = await orderCololection.updateOne(
-          { transactionId: req.params.tranId },
-          {
-            $set: {
-              paidStatus: true,
-              Payment,
-            },
-          }
+      if (result.modifiedCount > 0) {
+        res.redirect(
+          `https://meetcast2.netlify.app/payment/success/${req.params.tranId}`
         );
+      }
+    });
 
-        if (result.modifiedCount > 0) {
-          res.redirect(
-            `https://meetcast2.netlify.app/payment/success/${req.params.tranId}`
-          );
-        }
+    app.post("/payment/faild/:tranId", async (req, res) => {
+      const result = await orderCololection.deleteOne({
+        transactionId: req.params.tranId,
       });
+      if (result.deletedCount) {
+        res.redirect(
+          `https://meetcast2.netlify.app/payment/faild/${req.params.tranId}`
+        );
+      }
+    });
+    console.log(data);
+    const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
+    sslcz.init(data).then((apiResponse) => {
+      // console.log(apiResponse);
+      // Redirect the user to payment gateway
+      let GatewayPageURL = apiResponse.GatewayPageURL;
+      res.send({ url: GatewayPageURL });
+      const finalOrder = {
+        products,
+        paidStatus: false,
+        transactionId: tran_id,
+      };
+      const result = orderCololection.insertOne(finalOrder);
+      console.log("Redirecting to: ", GatewayPageURL);
+    });
 
-      app.post("/payment/faild/:tranId", async (req, res) => {
-        const result = await orderCololection.deleteOne({
-          transactionId: req.params.tranId,
-        });
-        if (result.deletedCount) {
-          res.redirect(
-            `https://meetcast2.netlify.app/payment/faild/${req.params.tranId}`
-          );
+    app.post("/payment/success/:tranId", async (req, res) => {
+      // console.log("tran", req.params.tranId);
+      const result = await orderCololection.updateOne(
+        { transactionId: req.params.tranId },
+        {
+          $set: {
+            paidStatus: true,
+            Payment,
+          },
         }
-      });
+      );
 
-      // f
+      if (result.modifiedCount > 0) {
+        res.redirect(
+          `${process.env.API_URL}/payment/success/${req.params.tranId}`
+        );
+      }
+    });
+
+    app.post("/payment/faild/:tranId", async (req, res) => {
+      const result = await orderCololection.deleteOne({
+        transactionId: req.params.tranId,
+      });
+      if (result.deletedCount) {
+        res.redirect(
+          `${process.env.API_URL}/payment/faild/${req.params.tranId}`
+        );
+      }
     });
 
     // Order end
