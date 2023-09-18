@@ -15,7 +15,7 @@ app.use("/socket", socketServer); //socketserver disable if needed
 // sslcommerz payment key
 const store_id = process.env.STORE_ID;
 const store_passwd = process.env.STORE_PASS;
-const is_live = false; //true for live, false for sandbox
+const is_live = false; 
 
 const verifyJWT = (req, res, next) => {
 	const authorization = req.headers.authorization;
@@ -24,7 +24,7 @@ const verifyJWT = (req, res, next) => {
 	}
 	console.log(authorization);
 
-	// Bearer token
+	// Bearer Token
 	const token = authorization.split(" ")[1];
 	jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
 		if (err) {
@@ -58,7 +58,7 @@ async function run() {
 		const yearlyCololection = client.db("meetcastDb").collection("yearly");
 		const orderCololection = client.db("meetcastDb").collection("order");
 
-		// JWT Tokens
+		// JWT Token
 		app.post("/jwt", (req, res) => {
 			const user = req.body;
 			const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
