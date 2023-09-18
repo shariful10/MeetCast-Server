@@ -417,60 +417,52 @@ async function run() {
 			};
 			console.log("d", Payment);
 
-			if (result.modifiedCount > 0) {
-				res.redirect(`https://meetcast2.netlify.app/payment/success/${req.params.tranId}`);
-			}
-		});
-
-		app.post("/payment/faild/:tranId", async (req, res) => {
-			const result = await orderCololection.deleteOne({
-				transactionId: req.params.tranId,
+			console.log(data);
+			const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
+			sslcz.init(data).then((apiResponse) => {
+				// console.log(apiResponse);
+				// Redirect the user to payment gateway
+				let GatewayPageURL = apiResponse.GatewayPageURL;
+				res.send({ url: GatewayPageURL });
+				const finalOrder = {
+					products,
+					paidStatus: false,
+					transactionId: tran_id,
+				};
+				const result = orderCololection.insertOne(finalOrder);
+				console.log("Redirecting to: ", GatewayPageURL);
 			});
-			if (result.deletedCount) {
-				res.redirect(`https://meetcast2.netlify.app/payment/faild/${req.params.tranId}`);
-			}
-		});
-		console.log(data);
-		const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
-		sslcz.init(data).then((apiResponse) => {
-			// console.log(apiResponse);
-			// Redirect the user to payment gateway
-			let GatewayPageURL = apiResponse.GatewayPageURL;
-			res.send({ url: GatewayPageURL });
-			const finalOrder = {
-				products,
-				paidStatus: false,
-				transactionId: tran_id,
-			};
-			const result = orderCololection.insertOne(finalOrder);
-			console.log("Redirecting to: ", GatewayPageURL);
-		});
 
-		app.post("/payment/success/:tranId", async (req, res) => {
-			// console.log("tran", req.params.tranId);
-			const result = await orderCololection.updateOne(
-				{ transactionId: req.params.tranId },
-				{
-					$set: {
-						paidStatus: true,
-						Payment,
-					},
+			app.post("/payment/success/:tranId", async (req, res) => {
+				// console.log("tran", req.params.tranId);
+				const result = await orderCololection.updateOne(
+					{ transactionId: req.params.tranId },
+					{
+						$set: {
+							paidStatus: true,
+							Payment,
+						},
+					}
+				);
+
+				if (result.modifiedCount > 0) {
+					res.redirect(`${process.env.API_URL}/payment/success/${req.params.tranId}`);
 				}
-			);
-
-			if (result.modifiedCount > 0) {
-				res.redirect(`${process.env.API_URL}/payment/success/${req.params.tranId}`);
-			}
-		});
-
-		app.post("/payment/faild/:tranId", async (req, res) => {
-			const result = await orderCololection.deleteOne({
-				transactionId: req.params.tranId,
 			});
-			if (result.deletedCount) {
-				res.redirect(`${process.env.API_URL}/payment/faild/${req.params.tranId}`);
-			}
+
+			app.post("/payment/faild/:tranId", async (req, res) => {
+				const result = await orderCololection.deleteOne({
+					transactionId: req.params.tranId,
+				});
+				if (result.deletedCount) {
+					res.redirect(`${process.env.API_URL}/payment/faild/${req.params.tranId}`);
+				}
+			});
+
+			// f
 		});
+
+		// Order end
 
 		// Order end
 
