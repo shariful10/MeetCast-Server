@@ -86,7 +86,7 @@ async function run() {
 
     app.get("/userProfile", async (req, res) => {
       const result = await profileCollection.find().toArray();
-      console.log(result);
+      console.log("000000000000 user profile",result);
       res.send(result);
     });
 
