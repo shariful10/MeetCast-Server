@@ -5,7 +5,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
 const SSLCommerzPayment = require("sslcommerz-lts");
-// const socketServer = require("./Routes/sockets"); //socketserver disable if needed
+
 
 //middleware
 app.use(cors());
