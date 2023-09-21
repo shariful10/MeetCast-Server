@@ -173,7 +173,9 @@ async function run() {
 		// get specific meeting
 		app.get("/meetings/:email", async (req, res) => {
 			const email = req.params.email;
+			console.log("aa",email);
 			const result = await meetingsCollection.find({ email: email }).toArray();
+			console.log(result);
 			res.send(result);
 		});
 
