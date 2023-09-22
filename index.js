@@ -13,7 +13,7 @@ app.use(express.json());
 // sslcommerz payment key
 const store_id = process.env.STORE_ID;
 const store_passwd = process.env.STORE_PASS;
-const is_live = false; 
+const is_live = false;
 
 const verifyJWT = (req, res, next) => {
 	const authorization = req.headers.authorization;
@@ -171,9 +171,7 @@ async function run() {
 		// get specific meeting
 		app.get("/meetings/:email", async (req, res) => {
 			const email = req.params.email;
-			console.log("aa",email);
 			const result = await meetingsCollection.find({ email: email }).toArray();
-			console.log(result);
 			res.send(result);
 		});
 
@@ -214,87 +212,83 @@ async function run() {
 			const room = req.body;
 			const result = await blogsCollection.insertOne(room);
 			res.send(result);
-		  });
-	  
-		  // Get all blogs
-		  app.get("/blogs", async (req, res) => {
+		});
+
+		// Get all blogs
+		app.get("/blogs", async (req, res) => {
 			const result = await blogsCollection.find().toArray();
 			res.send(result);
-		  });
-	  
-		  // Get all approved Blogs
-		  app.get("/approved-blogs", async (req, res) => {
-			const result = await blogsCollection
-			  .find({ status: "approved" })
-			  .toArray();
+		});
+
+		// Get all approved Blogs
+		app.get("/approved-blogs", async (req, res) => {
+			const result = await blogsCollection.find({ status: "approved" }).toArray();
 			res.send(result);
-		  });
-	  
-		  // Get blogs with matching ID
-		  app.get("/blog/:id", async (req, res) => {
+		});
+
+		// Get blogs with matching ID
+		app.get("/blog/:id", async (req, res) => {
 			const id = req.params.id;
 			const query = { _id: new ObjectId(id) };
 			const result = await blogsCollection.findOne(query);
 			res.send(result);
-		  });
-	  
-		  // user added blogs
-		  app.get("/my-blogs", verifyJWT, async (req, res) => {
+		});
+
+		// user added blogs
+		app.get("/my-blogs", verifyJWT, async (req, res) => {
 			const email = req.query.email;
-	  
+
 			// Return if no email found
 			if (!email) {
-			  res.send([]);
+				res.send([]);
 			}
-	  
+
 			// Verify if the given email match the token email
 			const decodedEmail = req.decoded.email;
 			if (email !== decodedEmail) {
-			  return res
-				.status(403)
-				.send({ error: true, message: "Forbidden access" });
+				return res.status(403).send({ error: true, message: "Forbidden access" });
 			}
-	  
+
 			// Now collect only selected Instructor class item
 			const query = { email: email };
 			const result = await blogsCollection.find(query).toArray();
 			res.send(result);
-		  });
-	  
-		  app.patch("/update/:id", async (req, res) => {
+		});
+
+		app.patch("/update/:id", async (req, res) => {
 			const id = req.params.id;
 			const updatedBlog = req.body;
-	  
+
 			const query = { _id: new ObjectId(id) };
 			const updateDoc = {
-			  $set: {
-				title: updatedBlog.title,
-				subTitle: updatedBlog.subTitle,
-				description: updatedBlog.description,
-			  },
+				$set: {
+					title: updatedBlog.title,
+					subTitle: updatedBlog.subTitle,
+					description: updatedBlog.description,
+				},
 			};
 			const result = await blogsCollection.updateOne(query, updateDoc);
 			res.send(result);
-		  });
-	  
-		  // Change Blog Status
-		  app.patch("/blogs/admin/:id", async (req, res) => {
+		});
+
+		// Change Blog Status
+		app.patch("/blogs/admin/:id", async (req, res) => {
 			const id = req.params.id;
 			const filter = { _id: new ObjectId(id) };
 			const updatedDoc = {
-			  $set: {
-				status: "approved",
-			  },
+				$set: {
+					status: "approved",
+				},
 			};
 			const result = await blogsCollection.updateOne(filter, updatedDoc);
 			res.send(result);
-		  });
-	  
-		  app.delete("/blogs/:id", async (req, res) => {
+		});
+
+		app.delete("/blogs/:id", async (req, res) => {
 			const id = req.params.id;
 			const result = await blogsCollection.deleteOne({ _id: new ObjectId(id) });
 			res.send(result);
-		  });
+		});
 
 		//  Payment API Start
 		app.get("/monthly", async (req, res) => {
