@@ -5,12 +5,10 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
 const SSLCommerzPayment = require("sslcommerz-lts");
-// const socketServer = require("./Routes/sockets"); //socketserver disable if needed
 
 //middleware
 app.use(cors());
 app.use(express.json());
-// app.use("/socket", socketServer); //socketserver disable if needed
 
 // sslcommerz payment key
 const store_id = process.env.STORE_ID;
@@ -214,78 +212,87 @@ async function run() {
 			const room = req.body;
 			const result = await blogsCollection.insertOne(room);
 			res.send(result);
-		});
-
-		// Get all blogs
-		app.get("/blogs", async (req, res) => {
+		  });
+	  
+		  // Get all blogs
+		  app.get("/blogs", async (req, res) => {
 			const result = await blogsCollection.find().toArray();
 			res.send(result);
-		});
-
-		// Get all approved Blogs
-		app.get("/approved-blogs", async (req, res) => {
-			const result = await blogsCollection.find({ status: "approved" }).toArray();
+		  });
+	  
+		  // Get all approved Blogs
+		  app.get("/approved-blogs", async (req, res) => {
+			const result = await blogsCollection
+			  .find({ status: "approved" })
+			  .toArray();
 			res.send(result);
-		});
-
-		// user added blogs
-		app.get("/my-blogs", verifyJWT, async (req, res) => {
+		  });
+	  
+		  // Get blogs with matching ID
+		  app.get("/blog/:id", async (req, res) => {
+			const id = req.params.id;
+			const query = { _id: new ObjectId(id) };
+			const result = await blogsCollection.findOne(query);
+			res.send(result);
+		  });
+	  
+		  // user added blogs
+		  app.get("/my-blogs", verifyJWT, async (req, res) => {
 			const email = req.query.email;
-
+	  
 			// Return if no email found
 			if (!email) {
-				res.send([]);
+			  res.send([]);
 			}
-
+	  
 			// Verify if the given email match the token email
 			const decodedEmail = req.decoded.email;
 			if (email !== decodedEmail) {
-				return res.status(403).send({ error: true, message: "Forbidden access" });
+			  return res
+				.status(403)
+				.send({ error: true, message: "Forbidden access" });
 			}
-
+	  
 			// Now collect only selected Instructor class item
 			const query = { email: email };
 			const result = await blogsCollection.find(query).toArray();
 			res.send(result);
-		});
-
-		app.patch("/blogs/:id", async (req, res) => {
+		  });
+	  
+		  app.patch("/update/:id", async (req, res) => {
 			const id = req.params.id;
 			const updatedBlog = req.body;
-
+	  
 			const query = { _id: new ObjectId(id) };
 			const updateDoc = {
-				$set: {
-					title: updatedBlog.title,
-					subTitle: updatedBlog.subTitle,
-					image: updatedBlog.image,
-					description: updatedBlog.description,
-				},
+			  $set: {
+				title: updatedBlog.title,
+				subTitle: updatedBlog.subTitle,
+				description: updatedBlog.description,
+			  },
 			};
-			const result = await blogsCollection.updateOne(query, updateDoc, {
-				new: true,
-			});
+			const result = await blogsCollection.updateOne(query, updateDoc);
 			res.send(result);
-		});
-
-		// Change Blog Status
-		app.patch("/blogs/admin/:id", async (req, res) => {
+		  });
+	  
+		  // Change Blog Status
+		  app.patch("/blogs/admin/:id", async (req, res) => {
 			const id = req.params.id;
 			const filter = { _id: new ObjectId(id) };
 			const updatedDoc = {
-				$set: {
-					status: "approved",
-				},
+			  $set: {
+				status: "approved",
+			  },
 			};
 			const result = await blogsCollection.updateOne(filter, updatedDoc);
 			res.send(result);
-		});
-
-		app.delete("/blogs/:id", async (req, res) => {
+		  });
+	  
+		  app.delete("/blogs/:id", async (req, res) => {
 			const id = req.params.id;
 			const result = await blogsCollection.deleteOne({ _id: new ObjectId(id) });
 			res.send(result);
-		});
+		  });
 
 		//  Payment API Start
 		app.get("/monthly", async (req, res) => {
@@ -521,13 +528,8 @@ async function run() {
 		});
 
 		app.get("/order", async (req, res) => {
-			// console.log(req.params.tranId);
-
-			// const tranId = req.params.tranId
-
 			const result = await orderCololection.find().toArray();
 			res.send(result);
-			// console.log(result);
 		});
 
 		//  Payment API End
