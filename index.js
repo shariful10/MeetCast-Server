@@ -49,7 +49,6 @@ const client = new MongoClient(uri, {
 async function run() {
 	try {
 		const usersCollection = client.db("meetcastDb").collection("users");
-		const profileCollection = client.db("meetcastDb").collection("profile");
 		const meetingsCollection = client.db("meetcastDb").collection("meetings");
 		const blogsCollection = client.db("meetcastDb").collection("blogs");
 		const userAddress = client.db("meetcastDb").collection("UserPaymentAddress ");
