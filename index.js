@@ -1,4 +1,5 @@
 const express = require("express");
+const fetch = require("cross-fetch");
 const app = express();
 const cors = require("cors");
 require("dotenv").config();
@@ -13,7 +14,7 @@ app.use(express.json());
 // sslcommerz payment key
 const store_id = process.env.STORE_ID;
 const store_passwd = process.env.STORE_PASS;
-const is_live = false; 
+const is_live = false;
 
 const verifyJWT = (req, res, next) => {
 	const authorization = req.headers.authorization;
@@ -56,7 +57,9 @@ async function run() {
 		const yearlyCololection = client.db("meetcastDb").collection("yearly");
 		const orderCololection = client.db("meetcastDb").collection("order");
 
+		//==========//
 		// JWT Token
+		//==========//
 		app.post("/jwt", (req, res) => {
 			const user = req.body;
 			const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
@@ -76,21 +79,9 @@ async function run() {
 			next();
 		};
 
-		//userProfile Information
-
-		app.post("/userProfile", async (req, res) => {
-			const userProfile = req.body;
-			const result = await profileCollection.insertOne(userProfile);
-			res.send(result);
-		});
-
-		app.get("/userProfile", async (req, res) => {
-			const result = await profileCollection.find().toArray();
-			console.log(result);
-			res.send(result);
-		});
-
+		//================//
 		// User collection
+		//================//
 		app.put("/users/:email", async (req, res) => {
 			const email = req.params.email;
 			const user = req.body;
@@ -103,27 +94,35 @@ async function run() {
 			res.send(result);
 		});
 
+		//=========================//
 		// Get Specific User By Id
+		//=========================//
 		app.get("/users/:id", async (req, res) => {
 			const id = req.params.id;
 			const result = await usersCollection.findOne({ _id: new ObjectId(id) });
 			res.send(result);
 		});
 
+		//===========================//
 		// Get Specific User By Email
+		//===========================//
 		app.get("/users/:email", async (req, res) => {
 			const email = req.params.email;
 			const result = await usersCollection.findOne({ email: email });
 			res.send(result);
 		});
 
+		//=============//
 		// Get All User
+		//=============//
 		app.get("/users", async (req, res) => {
 			const result = await usersCollection.find().toArray();
 			res.send(result);
 		});
 
-		// Change User Email Role
+		//=======================//
+		// Change User Email Role 
+		//=======================//
 		app.patch("/users/editor/:id", async (req, res) => {
 			const id = req.params.id;
 			const filter = { _id: new ObjectId(id) };
@@ -161,34 +160,77 @@ async function run() {
 			res.send(result);
 		});
 
-		// Delete a single user from the database
+		//======================================// 
+		// Delete a single user from the database 
+		//=====================================//
 		app.delete("/users/:id", async (req, res) => {
 			const id = req.params.id;
 			const result = await usersCollection.deleteOne({ _id: new ObjectId(id) });
 			res.send(result);
 		});
 
-		// get specific meeting
+		//======================//
+		// Get specific meeting
+		//======================//
 		app.get("/meetings/:email", async (req, res) => {
 			const email = req.params.email;
 			const result = await meetingsCollection.find({ email: email }).toArray();
 			res.send(result);
 		});
 
-		// save meeting
+		//=============//
+		// Save meeting
+		//============//
 		app.post("/meetings", async (req, res) => {
+			const meetingData = req.body;
 			try {
-				const meetingData = req.body;
 				const result = await meetingsCollection.insertOne(meetingData);
-
-				res.status(200).send("Meeting scheduled successfully");
+				res.send(result);
 			} catch (error) {
 				console.error("Error scheduling meeting:", error);
 				res.status(500).send("An error occurred while scheduling the meeting");
 			}
 		});
 
+		//==============================//
+		// Whereby Video Conference Start
+		//==============================//
+		const meetingID = "1234";
+		
+		const API_KEY = `${process.env.WHEREBY_API_KEY}`;
+
+		const data = {
+			endDate: "2099-02-18T14:23:00.000Z",
+			roomMode: "group",
+			meetingId: meetingID,
+			isLocked: true,
+			fields: ["hostRoomUrl"],
+		};
+
+		app.get("/getMeetingData", async (req, res) => {
+			try {
+				const response = await fetch("https://api.whereby.dev/v1/meetings", {
+					method: "POST",
+					headers: {
+						Authorization: `Bearer ${API_KEY}`,
+						"content-type": "application/json",
+					},
+					body: JSON.stringify(data),
+				});
+				const responseData = await response.json();
+				res.status(response.status).json(responseData);
+			} catch (error) {
+				console.error("Error:", error);
+				res.status(500).json({ error: "Internal Server Error" });
+			}
+		});
+		//=============================//
+		// Whereby Video Conference End
+		//=============================//
+
+		//===============//
 		// Delete Meeting
+		//===============//
 		app.delete("/meetings/:id", async (req, res) => {
 			const meetingId = req.params.id;
 			try {
@@ -207,99 +249,112 @@ async function run() {
 			}
 		});
 
+		//==============================//
 		// Save a Blogs Data in Database
+		//=============================//
 		app.post("/blogs", async (req, res) => {
 			const room = req.body;
 			const result = await blogsCollection.insertOne(room);
 			res.send(result);
-		  });
-	  
-		  // Get all blogs
-		  app.get("/blogs", async (req, res) => {
+		});
+
+		//==============//
+		// Get all blogs
+		//=============//
+		app.get("/blogs", async (req, res) => {
 			const result = await blogsCollection.find().toArray();
 			res.send(result);
-		  });
-	  
-		  // Get all approved Blogs
-		  app.get("/approved-blogs", async (req, res) => {
-			const result = await blogsCollection
-			  .find({ status: "approved" })
-			  .toArray();
+		});
+
+		//=======================//
+		// Get all approved Blogs
+		//=======================//
+		app.get("/approved-blogs", async (req, res) => {
+			const result = await blogsCollection.find({ status: "approved" }).toArray();
 			res.send(result);
-		  });
-	  
-		  // Get blogs with matching ID
-		  app.get("/blog/:id", async (req, res) => {
+		});
+
+		//==========================//
+		// Get blogs with matching ID
+		//==========================//
+		app.get("/blog/:id", async (req, res) => {
 			const id = req.params.id;
 			const query = { _id: new ObjectId(id) };
 			const result = await blogsCollection.findOne(query);
 			res.send(result);
-		  });
-	  
-		  // user added blogs
-		  app.get("/my-blogs", verifyJWT, async (req, res) => {
+		});
+
+		//=================//
+		// user added blogs
+		//=================//
+		app.get("/my-blogs", verifyJWT, async (req, res) => {
 			const email = req.query.email;
-	  
+
 			// Return if no email found
 			if (!email) {
-			  res.send([]);
+				res.send([]);
 			}
-	  
+
 			// Verify if the given email match the token email
 			const decodedEmail = req.decoded.email;
 			if (email !== decodedEmail) {
-			  return res
-				.status(403)
-				.send({ error: true, message: "Forbidden access" });
+				return res.status(403).send({ error: true, message: "Forbidden access" });
 			}
-	  
+
 			// Now collect only selected Instructor class item
 			const query = { email: email };
 			const result = await blogsCollection.find(query).toArray();
 			res.send(result);
-		  });
-	  
-		  app.patch("/update/:id", async (req, res) => {
+		});
+
+		app.patch("/update/:id", async (req, res) => {
 			const id = req.params.id;
 			const updatedBlog = req.body;
-	  
+
 			const query = { _id: new ObjectId(id) };
 			const updateDoc = {
-			  $set: {
-				title: updatedBlog.title,
-				subTitle: updatedBlog.subTitle,
-				description: updatedBlog.description,
-			  },
+				$set: {
+					title: updatedBlog.title,
+					subTitle: updatedBlog.subTitle,
+					description: updatedBlog.description,
+				},
 			};
 			const result = await blogsCollection.updateOne(query, updateDoc);
 			res.send(result);
-		  });
-	  
-		  // Change Blog Status
-		  app.patch("/blogs/admin/:id", async (req, res) => {
+		});
+
+		//===================//
+		// Change Blog Status
+		//===================//
+		app.patch("/blogs/admin/:id", async (req, res) => {
 			const id = req.params.id;
 			const filter = { _id: new ObjectId(id) };
 			const updatedDoc = {
-			  $set: {
-				status: "approved",
-			  },
+				$set: {
+					status: "approved",
+				},
 			};
 			const result = await blogsCollection.updateOne(filter, updatedDoc);
 			res.send(result);
-		  });
-	  
-		  app.delete("/blogs/:id", async (req, res) => {
+		});
+
+		app.delete("/blogs/:id", async (req, res) => {
 			const id = req.params.id;
 			const result = await blogsCollection.deleteOne({ _id: new ObjectId(id) });
 			res.send(result);
-		  });
+		});
 
+		//===================//
 		//  Payment API Start
+		//===================//
 		app.get("/monthly", async (req, res) => {
 			const result = await monthlyCololection.find().toArray();
 			res.send(result);
 		});
+
+		//===================//
 		//  Payment API Start
+		//===================//
 		app.get("/monthly", async (req, res) => {
 			const result = await monthlyCololection.find().toArray();
 			res.send(result);
@@ -310,7 +365,10 @@ async function run() {
 			res.send(result);
 		});
 
+
+		//============//
 		// priceing id
+		//============//
 		app.get("/monthly/:id", async (req, res) => {
 			try {
 				const id = req.params.id;
@@ -349,11 +407,11 @@ async function run() {
 			}
 		});
 
+		//============//
 		// Order start
-
+		//============//
 		app.post("/order", async (req, res) => {
 			console.log(req.body);
-
 			const tran_id = new ObjectId().toString();
 
 			const product = await monthlyCololection.findOne({
@@ -465,12 +523,7 @@ async function run() {
 					res.redirect(`${process.env.API_URL}/payment/faild/${req.params.tranId}`);
 				}
 			});
-
-			// f
 		});
-
-		// Order end
-
 		// Order end
 
 		app.post("/userAddress", async (req, res) => {
@@ -532,7 +585,9 @@ async function run() {
 			res.send(result);
 		});
 
+		//=================//
 		//  Payment API End
+		//=================//
 
 		// Send a ping to confirm a successful connection
 		await client.db("admin").command({ ping: 1 });
