@@ -120,7 +120,7 @@ async function run() {
 		});
 
 		//=======================//
-		// Change User Email Role 
+		// Change User Email Role
 		//=======================//
 		app.patch("/users/editor/:id", async (req, res) => {
 			const id = req.params.id;
@@ -159,8 +159,8 @@ async function run() {
 			res.send(result);
 		});
 
-		//======================================// 
-		// Delete a single user from the database 
+		//======================================//
+		// Delete a single user from the database
 		//=====================================//
 		app.delete("/users/:id", async (req, res) => {
 			const id = req.params.id;
@@ -195,7 +195,7 @@ async function run() {
 		// Whereby Video Conference Start
 		//==============================//
 		const meetingID = "1234";
-		
+
 		const API_KEY = `${process.env.WHEREBY_API_KEY}`;
 
 		const data = {
@@ -363,7 +363,6 @@ async function run() {
 			const result = await yearlyCololection.find().toArray();
 			res.send(result);
 		});
-
 
 		//============//
 		// priceing id
